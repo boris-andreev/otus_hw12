@@ -1,10 +1,10 @@
 package model
 
 type HomeworkItem struct {
-	id          int
+	Id          int
 	Description string
 }
 
 func (h HomeworkItem) GetId() int {
-	return h.id
+	return h.Id
 }

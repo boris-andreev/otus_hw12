@@ -1,10 +1,10 @@
 package model
 
 type WorkoutItem struct {
-	id     int
+	Id     int
 	Target string
 }
 
 func (w WorkoutItem) GetId() int {
-	return w.id
+	return w.Id
 }

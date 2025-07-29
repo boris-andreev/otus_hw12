@@ -3,24 +3,24 @@ package service
 import (
 	"hw12/internal/model"
 	"hw12/internal/repository"
+	"sync/atomic"
 )
 
 type TodoService struct {
-	todoRepository *repository.TodoRepository
+	items    chan repository.Identifier
+	identity atomic.Int64
 }
 
 func (t *TodoService) BulkSave() {
-	t.todoRepository.SaveItem(model.HomeworkItem{Description: "math homework"})
-	t.todoRepository.SaveItem(model.StudyItem{Topic: "math homework"})
-	t.todoRepository.SaveItem(model.WorkoutItem{Target: "Grow musculs"})
+	t.identity.Add(1)
+	id := int(t.identity.Load())
+	t.items <- model.HomeworkItem{Id: id, Description: "Math homework"}
+	t.items <- model.StudyItem{Id: id, Topic: "Math lesson"}
+	t.items <- model.WorkoutItem{Id: id, Target: "Grow musculs"}
 }
 
-func (t *TodoService) PrintItems() {
-	t.todoRepository.PrintItems()
-}
-
-func NewTodoServise() *TodoService {
+func NewTodoServise(items chan repository.Identifier) *TodoService {
 	return &TodoService{
-		todoRepository: repository.NewTodoRepository(),
+		items: items,
 	}
 }
