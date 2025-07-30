@@ -8,10 +8,8 @@ import (
 )
 
 func main() {
-	items := make(chan repository.Identifier)
-	todoService := service.NewTodoServise(items)
-	todoRepository := repository.NewTodoRepository(items)
-	go todoRepository.Listen()
+	todoService := service.NewTodoServise(repository.NewTodoRepository())
+	go todoService.Listen()
 
 	ticker := time.NewTicker(50 * time.Millisecond)
 	defer ticker.Stop()

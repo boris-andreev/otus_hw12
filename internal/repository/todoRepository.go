@@ -1,9 +1,7 @@
 package repository
 
 import (
-	"fmt"
 	"sync"
-	"time"
 
 	"hw12/internal/model"
 )
@@ -17,84 +15,83 @@ type TodoRepository struct {
 	studies   []model.StudyItem
 	workouts  []model.WorkoutItem
 
-	homeworksMutex *sync.Mutex
-	studiesMutex   *sync.Mutex
-	workoutsMutex  *sync.Mutex
+	homeworksMutex *sync.RWMutex
+	studiesMutex   *sync.RWMutex
+	workoutsMutex  *sync.RWMutex
 
 	items chan Identifier
 }
 
-func (t *TodoRepository) Listen() {
-	var once sync.Once
-
-	once.Do(func() {
-		go t.log()
-	})
-
-	for {
-		item, ok := <-t.items
-
-		if !ok {
-			break
-		}
-
-		switch item.(type) {
-		case model.HomeworkItem:
-			go appendItem[model.HomeworkItem](&t.homeworks, item.(model.HomeworkItem), t.homeworksMutex)
-		case model.StudyItem:
-			go appendItem[model.StudyItem](&t.studies, item.(model.StudyItem), t.studiesMutex)
-		case model.WorkoutItem:
-			go appendItem[model.WorkoutItem](&t.workouts, item.(model.WorkoutItem), t.workoutsMutex)
-		}
+func (t *TodoRepository) SaveItem(item Identifier) {
+	switch item.(type) {
+	case model.HomeworkItem:
+		appendItem[model.HomeworkItem](&t.homeworks, item.(model.HomeworkItem), t.homeworksMutex)
+	case model.StudyItem:
+		appendItem[model.StudyItem](&t.studies, item.(model.StudyItem), t.studiesMutex)
+	case model.WorkoutItem:
+		appendItem[model.WorkoutItem](&t.workouts, item.(model.WorkoutItem), t.workoutsMutex)
 	}
 }
 
-func (t *TodoRepository) log() {
-	ticker := time.NewTicker(200 * time.Millisecond)
-	defer ticker.Stop()
-
-	homeworkItemsAdded := 0
-	studyItemsAdded := 0
-	workoutItemsAdded := 0
-
-	for {
-		select {
-		case <-ticker.C:
-			func() {
-				go logAdded(&t.homeworks, t.homeworksMutex, &homeworkItemsAdded, "Homeworks were added:")
-				go logAdded(&t.studies, t.studiesMutex, &studyItemsAdded, "Studies were added:")
-				go logAdded(&t.workouts, t.workoutsMutex, &workoutItemsAdded, "Workouts were added:")
-			}()
-		}
-	}
-}
-
-func appendItem[T model.HomeworkItem | model.StudyItem | model.WorkoutItem](slice *[]T, item T, mutex *sync.Mutex) {
+func appendItem[T model.HomeworkItem | model.StudyItem | model.WorkoutItem](slice *[]T, item T, mutex *sync.RWMutex) {
 	defer mutex.Unlock()
 
 	mutex.Lock()
 	*slice = append(*slice, item)
 }
 
-func logAdded[T any](slice *[]T, mutex *sync.Mutex, counter *int, message string) {
-	defer mutex.Unlock()
+func (t *TodoRepository) GetHomeworskCount() int {
+	defer t.homeworksMutex.RUnlock()
 
-	mutex.Lock()
-	itemsWereAdded := *counter < len(*slice)
+	t.homeworksMutex.RLock()
 
-	if itemsWereAdded {
-		fmt.Println(message, (*slice)[*counter:])
-		*counter = len(*slice)
-	}
-
-	return
+	return len(t.homeworks)
 }
 
-func NewTodoRepository(items chan Identifier) *TodoRepository {
+func (t *TodoRepository) GetStudiesCount() int {
+	defer t.studiesMutex.RUnlock()
+
+	t.studiesMutex.RLock()
+
+	return len(t.studies)
+}
+
+func (t *TodoRepository) GetWorkoutCount() int {
+	defer t.workoutsMutex.RUnlock()
+
+	t.workoutsMutex.RLock()
+
+	return len(t.workouts)
+}
+
+func (t *TodoRepository) GetHomewors(startIndex int) []model.HomeworkItem {
+	defer t.homeworksMutex.RUnlock()
+
+	t.homeworksMutex.RLock()
+
+	return t.homeworks[startIndex:]
+}
+
+func (t *TodoRepository) GetStudies(startIndex int) []model.StudyItem {
+	defer t.studiesMutex.RUnlock()
+
+	t.studiesMutex.RLock()
+
+	return t.studies[startIndex:]
+}
+
+func (t *TodoRepository) GetWorkouts(startIndex int) []model.WorkoutItem {
+	defer t.workoutsMutex.RUnlock()
+
+	t.workoutsMutex.RLock()
+
+	return t.workouts[startIndex:]
+}
+
+func NewTodoRepository() *TodoRepository {
 	return &TodoRepository{
-		items:          items,
-		homeworksMutex: &sync.Mutex{},
-		studiesMutex:   &sync.Mutex{},
-		workoutsMutex:  &sync.Mutex{},
+		homeworksMutex: &sync.RWMutex{},
+		studiesMutex:   &sync.RWMutex{},
+		workoutsMutex:  &sync.RWMutex{},
 	}
 }
