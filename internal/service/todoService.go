@@ -43,35 +43,36 @@ func (t *TodoService) Listen() {
 }
 
 func (t *TodoService) log() {
-	ticker := time.NewTicker(200 * time.Millisecond)
-	defer ticker.Stop()
+	go func() {
 
-	var homeworkItemsAdded atomic.Int64
-	var studyItemsAdded atomic.Int64
-	var workoutItemsAdded atomic.Int64
+		ticker := time.NewTicker(200 * time.Millisecond)
+		defer ticker.Stop()
 
-	for {
-		select {
-		case <-ticker.C:
-			func() {
-				go logAddedItems(t.repository.GetHomeworskCount(), &homeworkItemsAdded, "Homeworks were added:", t.repository.GetHomewors)
-				go logAddedItems(t.repository.GetStudiesCount(), &studyItemsAdded, "Studies were added:", t.repository.GetStudies)
-				go logAddedItems(t.repository.GetWorkoutCount(), &workoutItemsAdded, "Workouts were added:", t.repository.GetWorkouts)
-			}()
+		var homeworkItemsAdded int
+		var studyItemsAdded int
+		var workoutItemsAdded int
+
+		for {
+			select {
+			case <-ticker.C:
+				func() {
+					homeworkItemsAdded = logAddedItems(t.repository.GetHomeworskCount(), homeworkItemsAdded, "Homeworks were added:", t.repository.GetHomewors)
+					studyItemsAdded = logAddedItems(t.repository.GetStudiesCount(), studyItemsAdded, "Studies were added:", t.repository.GetStudies)
+					workoutItemsAdded = logAddedItems(t.repository.GetWorkoutCount(), workoutItemsAdded, "Workouts were added:", t.repository.GetWorkouts)
+				}()
+			}
 		}
-	}
+	}()
 }
 
-func logAddedItems[T any](itemsCount int, counter *atomic.Int64, message string, getItems func(int) []T) {
-	cnt := int((*counter).Load())
-	itemsWereAdded := cnt < itemsCount
+func logAddedItems[T any](itemsCount int, counter int, message string, getItems func(int) []T) int {
+	itemsWereAdded := counter < itemsCount
 
 	if itemsWereAdded {
-		fmt.Println(message, getItems(cnt))
-		(*counter).Swap(int64(itemsCount))
+		fmt.Println(message, getItems(counter))
 	}
 
-	return
+	return itemsCount
 }
 
 func NewTodoServise(repo *repository.TodoRepository) *TodoService {

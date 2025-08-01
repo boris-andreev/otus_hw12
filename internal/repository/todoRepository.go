@@ -34,56 +34,50 @@ func (t *TodoRepository) SaveItem(item Identifier) {
 }
 
 func appendItem[T model.HomeworkItem | model.StudyItem | model.WorkoutItem](slice *[]T, item T, mutex *sync.RWMutex) {
+	mutex.Lock()
 	defer mutex.Unlock()
 
-	mutex.Lock()
 	*slice = append(*slice, item)
 }
 
 func (t *TodoRepository) GetHomeworskCount() int {
-	defer t.homeworksMutex.RUnlock()
-
 	t.homeworksMutex.RLock()
+	defer t.homeworksMutex.RUnlock()
 
 	return len(t.homeworks)
 }
 
 func (t *TodoRepository) GetStudiesCount() int {
-	defer t.studiesMutex.RUnlock()
-
 	t.studiesMutex.RLock()
+	defer t.studiesMutex.RUnlock()
 
 	return len(t.studies)
 }
 
 func (t *TodoRepository) GetWorkoutCount() int {
-	defer t.workoutsMutex.RUnlock()
-
 	t.workoutsMutex.RLock()
+	defer t.workoutsMutex.RUnlock()
 
 	return len(t.workouts)
 }
 
 func (t *TodoRepository) GetHomewors(startIndex int) []model.HomeworkItem {
-	defer t.homeworksMutex.RUnlock()
-
 	t.homeworksMutex.RLock()
+	defer t.homeworksMutex.RUnlock()
 
 	return t.homeworks[startIndex:]
 }
 
 func (t *TodoRepository) GetStudies(startIndex int) []model.StudyItem {
-	defer t.studiesMutex.RUnlock()
-
 	t.studiesMutex.RLock()
+	defer t.studiesMutex.RUnlock()
 
 	return t.studies[startIndex:]
 }
 
 func (t *TodoRepository) GetWorkouts(startIndex int) []model.WorkoutItem {
-	defer t.workoutsMutex.RUnlock()
-
 	t.workoutsMutex.RLock()
+	defer t.workoutsMutex.RUnlock()
 
 	return t.workouts[startIndex:]
 }
