@@ -1,10 +1,10 @@
 package model
 
 type StudyItem struct {
-	id    int
+	Id    int
 	Topic string
 }
 
 func (s StudyItem) GetId() int {
-	return s.id
+	return s.Id
 }

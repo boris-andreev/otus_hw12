@@ -3,23 +3,21 @@ package main
 import (
 	"time"
 
+	"hw12/internal/repository"
 	"hw12/internal/service"
 )
 
 func main() {
-	todoService := service.NewTodoServise()
+	todoService := service.NewTodoServise(repository.NewTodoRepository())
+	go todoService.Listen()
 
-	ticker := time.NewTicker(10 * time.Second)
+	ticker := time.NewTicker(50 * time.Millisecond)
 	defer ticker.Stop()
 
 	for {
 		select {
 		case <-ticker.C:
-			func() {
-				todoService.BulkSave()
-				todoService.PrintItems()
-			}()
+			go todoService.BulkSave()
 		}
 	}
-
 }
