@@ -1,23 +1,26 @@
 package main
 
 import (
-	"time"
+	"context"
+	"fmt"
+	"os"
+	"os/signal"
+	"sync"
+	"syscall"
 
 	"hw12/internal/repository"
 	"hw12/internal/service"
 )
 
 func main() {
-	todoService := service.NewTodoServise(repository.NewTodoRepository())
-	go todoService.Listen()
+	var wg sync.WaitGroup
+	ctx, _ := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+	//defer stop()
 
-	ticker := time.NewTicker(50 * time.Millisecond)
-	defer ticker.Stop()
+	todoService := service.NewTodoServise(repository.NewTodoRepository(), ctx, &wg)
+	todoService.Produce()
+	todoService.Listen()
 
-	for {
-		select {
-		case <-ticker.C:
-			go todoService.BulkSave()
-		}
-	}
+	wg.Wait()
+	fmt.Println("\nGracefull shutdown is ok")
 }
