@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"sync/atomic"
@@ -14,6 +15,8 @@ type TodoService struct {
 	items      chan repository.Identifier
 	identity   atomic.Int64
 	repository *repository.TodoRepository
+	ctx        context.Context
+	wg         *sync.WaitGroup
 }
 
 func (t *TodoService) BulkSave() {
@@ -27,23 +30,58 @@ func (t *TodoService) BulkSave() {
 func (t *TodoService) Listen() {
 	var once sync.Once
 
-	once.Do(func() {
-		go t.log()
-	})
+	t.wg.Add(1)
 
-	for {
-		item, ok := <-t.items
+	go func() {
+		defer t.wg.Done()
 
-		if !ok {
-			break
+		once.Do(func() {
+			t.log()
+		})
+
+		for {
+			select {
+			case <-t.ctx.Done():
+				return
+			default:
+				item, ok := <-t.items
+
+				if !ok {
+					break
+				}
+
+				t.repository.SaveItem(item)
+			}
 		}
+	}()
+}
 
-		t.repository.SaveItem(item)
-	}
+func (t *TodoService) Produce() {
+	t.wg.Add(1)
+
+	go func() {
+		defer t.wg.Done()
+
+		ticker := time.NewTicker(50 * time.Millisecond)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-ticker.C:
+				t.BulkSave()
+			case <-t.ctx.Done():
+				close(t.items)
+				return
+			}
+		}
+	}()
 }
 
 func (t *TodoService) log() {
+	t.wg.Add(1)
+
 	go func() {
+		defer t.wg.Done()
 
 		ticker := time.NewTicker(200 * time.Millisecond)
 		defer ticker.Stop()
@@ -60,6 +98,8 @@ func (t *TodoService) log() {
 					studyItemsAdded = logAddedItems(t.repository.GetStudiesCount(), studyItemsAdded, "Studies were added:", t.repository.GetStudies)
 					workoutItemsAdded = logAddedItems(t.repository.GetWorkoutCount(), workoutItemsAdded, "Workouts were added:", t.repository.GetWorkouts)
 				}()
+			case <-t.ctx.Done():
+				return
 			}
 		}
 	}()
@@ -75,9 +115,11 @@ func logAddedItems[T any](itemsCount int, counter int, message string, getItems 
 	return itemsCount
 }
 
-func NewTodoServise(repo *repository.TodoRepository) *TodoService {
+func NewTodoServise(repo *repository.TodoRepository, ctx context.Context, wg *sync.WaitGroup) *TodoService {
 	return &TodoService{
 		items:      make(chan repository.Identifier),
 		repository: repo,
+		ctx:        ctx,
+		wg:         wg,
 	}
 }
