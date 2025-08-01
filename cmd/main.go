@@ -13,10 +13,10 @@ import (
 )
 
 func main() {
-	var wg sync.WaitGroup
-	ctx, _ := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
-	//defer stop()
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
 
+	var wg sync.WaitGroup
 	todoService := service.NewTodoServise(repository.NewTodoRepository(), ctx, &wg)
 	todoService.Produce()
 	todoService.Listen()
