@@ -40,18 +40,13 @@ func (t *TodoService) Listen() {
 		})
 
 		for {
-			select {
-			case <-t.ctx.Done():
-				return
-			default:
-				item, ok := <-t.items
+			item, ok := <-t.items
 
-				if !ok {
-					break
-				}
-
-				t.repository.SaveItem(item)
+			if !ok {
+				break
 			}
+
+			t.repository.SaveItem(item)
 		}
 	}()
 }
