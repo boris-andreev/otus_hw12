@@ -39,13 +39,7 @@ func (t *TodoService) Listen() {
 			t.log()
 		})
 
-		for {
-			item, ok := <-t.items
-
-			if !ok {
-				break
-			}
-
+		for item := range t.items {
 			t.repository.SaveItem(item)
 		}
 	}()
