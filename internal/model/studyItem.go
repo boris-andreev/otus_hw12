@@ -1,8 +1,8 @@
 package model
 
 type StudyItem struct {
-	Id    int
-	Topic string
+	Id    int    `json:"id"`
+	Topic string `json:"topic"`
 }
 
 func (s StudyItem) GetId() int {
