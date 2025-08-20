@@ -75,9 +75,9 @@ func (t *TodoService) log() {
 		ticker := time.NewTicker(200 * time.Millisecond)
 		defer ticker.Stop()
 
-		var homeworkItemsAdded int
-		var studyItemsAdded int
-		var workoutItemsAdded int
+		homeworkItemsAdded := t.repository.GetHomeworskCount()
+		studyItemsAdded := t.repository.GetStudiesCount()
+		workoutItemsAdded := t.repository.GetWorkoutCount()
 
 		for {
 			select {
