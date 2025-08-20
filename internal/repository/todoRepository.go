@@ -41,9 +41,9 @@ func (t *TodoRepository) SaveItem(item Identifier) {
 	case *model.HomeworkItem:
 		appendItem[model.HomeworkItem](&t.homeworks, item.(*model.HomeworkItem), t.homeworksMutex, homeworksJson, setId)
 	case *model.StudyItem:
-		appendItem[model.StudyItem](&t.studies, item.(*model.StudyItem), t.studiesMutex, studiesJson, func() { item.SetId(len(t.studies)) })
+		appendItem[model.StudyItem](&t.studies, item.(*model.StudyItem), t.studiesMutex, studiesJson, setId)
 	case *model.WorkoutItem:
-		appendItem[model.WorkoutItem](&t.workouts, item.(*model.WorkoutItem), t.workoutsMutex, workoutsJson, func() { item.SetId(len(t.workouts)) })
+		appendItem[model.WorkoutItem](&t.workouts, item.(*model.WorkoutItem), t.workoutsMutex, workoutsJson, setId)
 	}
 }
 
@@ -66,7 +66,7 @@ func appendItem[T model.HomeworkItem | model.StudyItem | model.WorkoutItem](
 	}
 }
 
-func (t *TodoRepository) GetHomeworskCount() int {
+func (t *TodoRepository) GetHomeworksCount() int {
 	t.homeworksMutex.RLock()
 	defer t.homeworksMutex.RUnlock()
 
