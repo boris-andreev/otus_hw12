@@ -5,6 +5,10 @@ type WorkoutItem struct {
 	Target string `json:"target"`
 }
 
-func (w WorkoutItem) GetId() int {
+func (w *WorkoutItem) GetId() int {
 	return w.Id
+}
+
+func (w *WorkoutItem) SetId(id int) {
+	w.Id = id
 }

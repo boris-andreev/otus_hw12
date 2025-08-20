@@ -14,6 +14,7 @@ import (
 
 type Identifier interface {
 	GetId() int
+	SetId(int)
 }
 
 const (
@@ -23,9 +24,9 @@ const (
 )
 
 type TodoRepository struct {
-	homeworks []model.HomeworkItem
-	studies   []model.StudyItem
-	workouts  []model.WorkoutItem
+	homeworks []*model.HomeworkItem
+	studies   []*model.StudyItem
+	workouts  []*model.WorkoutItem
 
 	homeworksMutex *sync.RWMutex
 	studiesMutex   *sync.RWMutex
@@ -35,19 +36,28 @@ type TodoRepository struct {
 }
 
 func (t *TodoRepository) SaveItem(item Identifier) {
+	setId := func(id int) { item.SetId(id) }
 	switch item.(type) {
-	case model.HomeworkItem:
-		appendItem[model.HomeworkItem](&t.homeworks, item.(model.HomeworkItem), t.homeworksMutex, homeworksJson)
-	case model.StudyItem:
-		appendItem[model.StudyItem](&t.studies, item.(model.StudyItem), t.studiesMutex, studiesJson)
-	case model.WorkoutItem:
-		appendItem[model.WorkoutItem](&t.workouts, item.(model.WorkoutItem), t.workoutsMutex, workoutsJson)
+	case *model.HomeworkItem:
+		appendItem[model.HomeworkItem](&t.homeworks, item.(*model.HomeworkItem), t.homeworksMutex, homeworksJson, setId)
+	case *model.StudyItem:
+		appendItem[model.StudyItem](&t.studies, item.(*model.StudyItem), t.studiesMutex, studiesJson, func() { item.SetId(len(t.studies)) })
+	case *model.WorkoutItem:
+		appendItem[model.WorkoutItem](&t.workouts, item.(*model.WorkoutItem), t.workoutsMutex, workoutsJson, func() { item.SetId(len(t.workouts)) })
 	}
 }
 
-func appendItem[T model.HomeworkItem | model.StudyItem | model.WorkoutItem](slice *[]T, item T, mutex *sync.RWMutex, fileName string) {
+func appendItem[T model.HomeworkItem | model.StudyItem | model.WorkoutItem](
+	slice *[]*T,
+	item *T,
+	mutex *sync.RWMutex,
+	fileName string,
+	setId func(id int)) {
+
 	mutex.Lock()
 	defer mutex.Unlock()
+
+	setId(len(*slice))
 
 	*slice = append(*slice, item)
 	err := appendToFile(fileName, item)
@@ -77,25 +87,25 @@ func (t *TodoRepository) GetWorkoutCount() int {
 	return len(t.workouts)
 }
 
-func (t *TodoRepository) GetHomewors(startIndex int) []model.HomeworkItem {
+func (t *TodoRepository) GetHomewors(startIndex int) (int, []*model.HomeworkItem) {
 	t.homeworksMutex.RLock()
 	defer t.homeworksMutex.RUnlock()
 
-	return t.homeworks[startIndex:]
+	return len(t.homeworks), t.homeworks[startIndex:]
 }
 
-func (t *TodoRepository) GetStudies(startIndex int) []model.StudyItem {
+func (t *TodoRepository) GetStudies(startIndex int) (int, []*model.StudyItem) {
 	t.studiesMutex.RLock()
 	defer t.studiesMutex.RUnlock()
 
-	return t.studies[startIndex:]
+	return len(t.studies), t.studies[startIndex:]
 }
 
-func (t *TodoRepository) GetWorkouts(startIndex int) []model.WorkoutItem {
+func (t *TodoRepository) GetWorkouts(startIndex int) (int, []*model.WorkoutItem) {
 	t.workoutsMutex.RLock()
 	defer t.workoutsMutex.RUnlock()
 
-	return t.workouts[startIndex:]
+	return len(t.workouts), t.workouts[startIndex:]
 }
 
 func NewTodoRepository() *TodoRepository {
@@ -124,8 +134,8 @@ func NewTodoRepository() *TodoRepository {
 	return result
 }
 
-func readFromFile[T model.HomeworkItem | model.StudyItem | model.WorkoutItem](fileName string) ([]T, error) {
-	var result []T
+func readFromFile[T model.HomeworkItem | model.StudyItem | model.WorkoutItem](fileName string) ([]*T, error) {
+	var result []*T
 	file, err := os.Open(fileName)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -151,13 +161,13 @@ func readFromFile[T model.HomeworkItem | model.StudyItem | model.WorkoutItem](fi
 		if err != nil {
 			return nil, errors.New(fmt.Sprintf("Cannot decode item from file %s, err: %s", fileName, err.Error()))
 		}
-		result = append(result, item)
+		result = append(result, &item)
 	}
 
 	return result, nil
 }
 
-func appendToFile[T model.HomeworkItem | model.StudyItem | model.WorkoutItem](fileName string, dataToAppend T) error {
+func appendToFile[T model.HomeworkItem | model.StudyItem | model.WorkoutItem](fileName string, dataToAppend *T) error {
 	file, err := os.OpenFile(fileName, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		return errors.New(fmt.Sprintf("Cannot open file %s, err: %s", fileName, err.Error()))

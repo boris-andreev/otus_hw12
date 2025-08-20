@@ -5,6 +5,10 @@ type HomeworkItem struct {
 	Description string `json:"description"`
 }
 
-func (h HomeworkItem) GetId() int {
+func (h *HomeworkItem) GetId() int {
 	return h.Id
+}
+
+func (h *HomeworkItem) SetId(id int) {
+	h.Id = id
 }
