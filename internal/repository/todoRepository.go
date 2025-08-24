@@ -88,24 +88,31 @@ func (t *TodoRepository) GetWorkoutCount() int {
 }
 
 func (t *TodoRepository) GetHomewors(startIndex int) (int, []*model.HomeworkItem) {
-	t.homeworksMutex.RLock()
-	defer t.homeworksMutex.RUnlock()
-
-	return len(t.homeworks), t.homeworks[startIndex:]
+	return getItems(startIndex, t.homeworksMutex, t.homeworks)
 }
 
 func (t *TodoRepository) GetStudies(startIndex int) (int, []*model.StudyItem) {
-	t.studiesMutex.RLock()
-	defer t.studiesMutex.RUnlock()
-
-	return len(t.studies), t.studies[startIndex:]
+	return getItems(startIndex, t.studiesMutex, t.studies)
 }
 
 func (t *TodoRepository) GetWorkouts(startIndex int) (int, []*model.WorkoutItem) {
-	t.workoutsMutex.RLock()
-	defer t.workoutsMutex.RUnlock()
+	return getItems(startIndex, t.workoutsMutex, t.workouts)
+}
 
-	return len(t.workouts), t.workouts[startIndex:]
+func getItems[T model.HomeworkItem | model.StudyItem | model.WorkoutItem](
+	startIndex int,
+	mu *sync.RWMutex,
+	slice []*T) (int, []*T) {
+
+	mu.RLock()
+	defer mu.RUnlock()
+
+	length := len(slice)
+	if length < startIndex {
+		return length, []*T{}
+	}
+
+	return length, slice[startIndex:]
 }
 
 func NewTodoRepository() *TodoRepository {
