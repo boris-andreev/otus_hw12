@@ -112,7 +112,10 @@ func getItems[T model.HomeworkItem | model.StudyItem | model.WorkoutItem](
 		return length, []*T{}
 	}
 
-	return length, slice[startIndex:]
+	sliceCopy := make([]*T, length-startIndex)
+	copy(sliceCopy, slice[startIndex:length])
+
+	return length, sliceCopy
 }
 
 func NewTodoRepository() *TodoRepository {
