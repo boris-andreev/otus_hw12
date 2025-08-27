@@ -1,10 +1,14 @@
 package model
 
 type StudyItem struct {
-	Id    int
-	Topic string
+	Id    int    `json:"id"`
+	Topic string `json:"topic"`
 }
 
-func (s StudyItem) GetId() int {
+func (s *StudyItem) GetId() int {
 	return s.Id
+}
+
+func (s *StudyItem) SetId(id int) {
+	s.Id = id
 }

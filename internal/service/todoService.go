@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"hw12/internal/model"
@@ -13,18 +12,15 @@ import (
 
 type TodoService struct {
 	items      chan repository.Identifier
-	identity   atomic.Int64
 	repository *repository.TodoRepository
 	ctx        context.Context
 	wg         *sync.WaitGroup
 }
 
 func (t *TodoService) BulkSave() {
-	t.identity.Add(1)
-	id := int(t.identity.Load())
-	t.items <- model.HomeworkItem{Id: id, Description: "Math homework"}
-	t.items <- model.StudyItem{Id: id, Topic: "Math lesson"}
-	t.items <- model.WorkoutItem{Id: id, Target: "Grow musculs"}
+	t.items <- &model.HomeworkItem{Description: "Math homework"}
+	t.items <- &model.StudyItem{Topic: "Math lesson"}
+	t.items <- &model.WorkoutItem{Target: "Grow musculs"}
 }
 
 func (t *TodoService) Listen() {
@@ -75,17 +71,17 @@ func (t *TodoService) log() {
 		ticker := time.NewTicker(200 * time.Millisecond)
 		defer ticker.Stop()
 
-		var homeworkItemsAdded int
-		var studyItemsAdded int
-		var workoutItemsAdded int
+		homeworkItemsAdded := t.repository.GetHomeworksCount()
+		studyItemsAdded := t.repository.GetStudiesCount()
+		workoutItemsAdded := t.repository.GetWorkoutCount()
 
 		for {
 			select {
 			case <-ticker.C:
 				func() {
-					homeworkItemsAdded = logAddedItems(t.repository.GetHomeworskCount(), homeworkItemsAdded, "Homeworks were added:", t.repository.GetHomewors)
-					studyItemsAdded = logAddedItems(t.repository.GetStudiesCount(), studyItemsAdded, "Studies were added:", t.repository.GetStudies)
-					workoutItemsAdded = logAddedItems(t.repository.GetWorkoutCount(), workoutItemsAdded, "Workouts were added:", t.repository.GetWorkouts)
+					homeworkItemsAdded = logAddedItems(homeworkItemsAdded, "Homeworks were added:", t.repository.GetHomewors)
+					studyItemsAdded = logAddedItems(studyItemsAdded, "Studies were added:", t.repository.GetStudies)
+					workoutItemsAdded = logAddedItems(workoutItemsAdded, "Workouts were added:", t.repository.GetWorkouts)
 				}()
 			case <-t.ctx.Done():
 				return
@@ -94,14 +90,23 @@ func (t *TodoService) log() {
 	}()
 }
 
-func logAddedItems[T any](itemsCount int, counter int, message string, getItems func(int) []T) int {
-	itemsWereAdded := counter < itemsCount
+func logAddedItems[T any](counter int, message string, getItems func(int) (int, []*T)) int {
+	totalCount, items := getItems(counter)
 
-	if itemsWereAdded {
-		fmt.Println(message, getItems(counter))
+	if totalCount > counter {
+		fmt.Print(message, "[")
+
+		for i, item := range items {
+			fmt.Print(*item)
+			if i < len(items)-1 {
+				fmt.Print(", ")
+			}
+		}
+
+		fmt.Print("]\n")
 	}
 
-	return itemsCount
+	return totalCount
 }
 
 func NewTodoServise(repo *repository.TodoRepository, ctx context.Context, wg *sync.WaitGroup) *TodoService {
