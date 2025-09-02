@@ -2,28 +2,65 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"sync"
-	"time"
 
 	"hw12/internal/model"
 	"hw12/internal/repository"
 )
 
 type TodoService struct {
-	items      chan repository.Identifier
+	items      chan *operationItem
 	repository *repository.TodoRepository
 	ctx        context.Context
 	wg         *sync.WaitGroup
+	logger     *logger
 }
 
-func (t *TodoService) BulkSave() {
-	t.items <- &model.HomeworkItem{Description: "Math homework"}
-	t.items <- &model.StudyItem{Topic: "Math lesson"}
-	t.items <- &model.WorkoutItem{Target: "Grow musculs"}
+func (t *TodoService) CreateItem(item model.Identifier) {
+	t.items <- &operationItem{item: item, operationType: add}
 }
 
-func (t *TodoService) Listen() {
+func (t *TodoService) UpdateItem(item model.Identifier) {
+	t.items <- &operationItem{item: item, operationType: update}
+}
+
+func (t *TodoService) DeleteHomeworkItem(id int) error {
+	return t.repository.DeleteHomeworkItem(id)
+}
+
+func (t *TodoService) DeleteStudyItem(id int) error {
+	return t.repository.DeleteStudyItem(id)
+}
+
+func (t *TodoService) DeleteWorkoutItem(id int) error {
+	return t.repository.DeleteWorkoutItem(id)
+}
+
+func (t *TodoService) GetHomeworkItem(id int) (*model.HomeworkItem, error) {
+	return t.repository.GetHomeworkItem(id)
+}
+
+func (t *TodoService) GetStudyItem(id int) (*model.StudyItem, error) {
+	return t.repository.GetStudyItem(id)
+}
+
+func (t *TodoService) GetWorkoutItem(id int) (*model.WorkoutItem, error) {
+	return t.repository.GetWorkoutItem(id)
+}
+
+func (t *TodoService) GetHomeworkItems() ([]*model.HomeworkItem, error) {
+	return t.repository.GetHomeworkItems()
+}
+
+func (t *TodoService) GetStudyItems() ([]*model.StudyItem, error) {
+	return t.repository.GetStudyItems()
+}
+
+func (t *TodoService) GetWorkoutItems() ([]*model.WorkoutItem, error) {
+	return t.repository.GetWorkoutItems()
+}
+
+func (t *TodoService) listenForItems() {
 	var once sync.Once
 
 	t.wg.Add(1)
@@ -32,28 +69,28 @@ func (t *TodoService) Listen() {
 		defer t.wg.Done()
 
 		once.Do(func() {
-			t.log()
+			t.logger.Log()
 		})
 
-		for item := range t.items {
-			t.repository.SaveItem(item)
+		for operationItem := range t.items {
+			switch operationItem.operationType {
+			case add:
+				t.repository.CreateItem(operationItem.item)
+			case update:
+				t.repository.UpdateItem(operationItem.item)
+			}
 		}
 	}()
 }
 
-func (t *TodoService) Produce() {
+func (t *TodoService) listenForFinish() {
 	t.wg.Add(1)
 
 	go func() {
 		defer t.wg.Done()
 
-		ticker := time.NewTicker(50 * time.Millisecond)
-		defer ticker.Stop()
-
 		for {
 			select {
-			case <-ticker.C:
-				t.BulkSave()
 			case <-t.ctx.Done():
 				close(t.items)
 				return
@@ -62,58 +99,17 @@ func (t *TodoService) Produce() {
 	}()
 }
 
-func (t *TodoService) log() {
-	t.wg.Add(1)
-
-	go func() {
-		defer t.wg.Done()
-
-		ticker := time.NewTicker(200 * time.Millisecond)
-		defer ticker.Stop()
-
-		homeworkItemsAdded := t.repository.GetHomeworksCount()
-		studyItemsAdded := t.repository.GetStudiesCount()
-		workoutItemsAdded := t.repository.GetWorkoutCount()
-
-		for {
-			select {
-			case <-ticker.C:
-				func() {
-					homeworkItemsAdded = logAddedItems(homeworkItemsAdded, "Homeworks were added:", t.repository.GetHomewors)
-					studyItemsAdded = logAddedItems(studyItemsAdded, "Studies were added:", t.repository.GetStudies)
-					workoutItemsAdded = logAddedItems(workoutItemsAdded, "Workouts were added:", t.repository.GetWorkouts)
-				}()
-			case <-t.ctx.Done():
-				return
-			}
-		}
-	}()
-}
-
-func logAddedItems[T any](counter int, message string, getItems func(int) (int, []*T)) int {
-	totalCount, items := getItems(counter)
-
-	if totalCount > counter {
-		fmt.Print(message, "[")
-
-		for i, item := range items {
-			fmt.Print(*item)
-			if i < len(items)-1 {
-				fmt.Print(", ")
-			}
-		}
-
-		fmt.Print("]\n")
-	}
-
-	return totalCount
-}
-
 func NewTodoServise(repo *repository.TodoRepository, ctx context.Context, wg *sync.WaitGroup) *TodoService {
-	return &TodoService{
-		items:      make(chan repository.Identifier),
+	res := &TodoService{
+		items:      make(chan *operationItem),
 		repository: repo,
 		ctx:        ctx,
 		wg:         wg,
+		logger:     NewLogger(repo, ctx, wg),
 	}
+
+	res.listenForItems()
+	res.listenForFinish()
+
+	return res
 }

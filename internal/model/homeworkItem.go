@@ -2,7 +2,7 @@ package model
 
 type HomeworkItem struct {
 	Id          int    `json:"id"`
-	Description string `json:"description"`
+	Description string `json:"description" binding:"required"`
 }
 
 func (h *HomeworkItem) GetId() int {
