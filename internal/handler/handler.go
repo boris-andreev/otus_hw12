@@ -10,12 +10,25 @@ type Handler struct {
 	service service
 }
 
+// @Summary Get homework item
+// @Tags homework
+// @Produce	json
+// @Param id path int true  "Item Id"
+// @Success 200 {object} model.HomeworkItem
+// @Failure 400 {string} string "Invalid request"
+// @Router /homework/:id [post]
 func (h Handler) GetHomeworkItem() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		getItem(ctx, h.service.GetHomeworkItem)
 	}
 }
 
+// @Summary Get homework item
+// @Tags homework
+// @Produce	json
+// @Success 200 {object} []model.HomeworkItem
+// @Failure 500 {string} string "Something went wrong"
+// @Router /homework/:id [post]
 func (h Handler) GetHomeworkItems() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		getItems(ctx, h.service.GetHomeworkItems)

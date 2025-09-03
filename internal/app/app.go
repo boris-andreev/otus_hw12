@@ -12,6 +12,10 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	ginSwaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
+
+	_ "hw12/docs"
 )
 
 type App struct {
@@ -39,6 +43,8 @@ func New(ctx context.Context, wg *sync.WaitGroup, todoService *service.TodoServi
 
 func configureRouting(router *gin.Engine, handler *handler.Handler) {
 	api := router.Group("/api")
+
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(ginSwaggerFiles.Handler))
 
 	homeworkGroup := api.Group("/homework")
 	homeworkGroup.POST("/", handler.CreateHomeworkItem())

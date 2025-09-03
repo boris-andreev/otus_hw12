@@ -1,0 +1,41 @@
+definitions:
+  model.HomeworkItem:
+    properties:
+      description:
+        type: string
+      id:
+        type: integer
+    required:
+    - description
+    type: object
+host: localhost:8080/
+info:
+  contact: {}
+  description: API Todo Server
+  title: Todo service
+  version: "1"
+paths:
+  /homework/:id:
+    post:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.HomeworkItem'
+            type: array
+        "500":
+          description: Something went wrong
+          schema:
+            type: string
+      summary: Get homework item
+      tags:
+      - homework
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
