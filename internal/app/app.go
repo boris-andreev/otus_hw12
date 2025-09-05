@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"hw12/internal/handler"
+	"hw12/internal/handler/authmiddleware"
 	"hw12/internal/service"
 	"log"
 	"net/http"
@@ -42,9 +43,13 @@ func New(ctx context.Context, wg *sync.WaitGroup, todoService *service.TodoServi
 }
 
 func configureRouting(router *gin.Engine, handler *handler.Handler) {
-	api := router.Group("/api")
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(ginSwaggerFiles.Handler))
+	router.POST("/login", handler.Login())
+
+	router.Use(authmiddleware.Handle())
+
+	api := router.Group("/api")
 
 	homeworkGroup := api.Group("/homework")
 	homeworkGroup.POST("/", handler.CreateHomeworkItem())

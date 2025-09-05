@@ -8,6 +8,36 @@ definitions:
     required:
     - description
     type: object
+  model.Login:
+    properties:
+      password:
+        example: not empty
+        type: string
+      username:
+        example: student
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  model.StudyItem:
+    properties:
+      id:
+        type: integer
+      topic:
+        type: string
+    required:
+    - topic
+    type: object
+  model.WorkoutItem:
+    properties:
+      id:
+        type: integer
+      target:
+        type: string
+    required:
+    - target
+    type: object
 host: localhost:8080/
 info:
   contact: {}
@@ -15,8 +45,35 @@ info:
   title: Todo service
   version: "1"
 paths:
-  /homework/:id:
+  /api/homework:
     post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Homework item
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/model.HomeworkItem'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.HomeworkItem'
+        "400":
+          description: Invalid request
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Create homework item
+      tags:
+      - homework
+  /api/homework/:
+    get:
       produces:
       - application/json
       responses:
@@ -30,9 +87,373 @@ paths:
           description: Something went wrong
           schema:
             type: string
+      security:
+      - BearerAuth: []
+      summary: Get homework items
+      tags:
+      - homework
+  /api/homework/{id}:
+    delete:
+      parameters:
+      - description: Item Id
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "400":
+          description: Invalid request
+          schema:
+            type: string
+        "500":
+          description: Something went wrong
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Delete homework item
+      tags:
+      - homework
+    get:
+      parameters:
+      - description: Item Id
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.HomeworkItem'
+        "400":
+          description: Invalid request
+          schema:
+            type: string
+        "404":
+          description: Item not found
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
       summary: Get homework item
       tags:
       - homework
+    post:
+      parameters:
+      - description: Item Id
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Homework item
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/model.HomeworkItem'
+      responses:
+        "400":
+          description: Invalid request
+          schema:
+            type: string
+        "500":
+          description: Something went wrong
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Update homework item
+      tags:
+      - homework
+  /api/study:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Study item
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/model.StudyItem'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.StudyItem'
+        "400":
+          description: Invalid request
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Create study items
+      tags:
+      - study
+  /api/study/:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.StudyItem'
+            type: array
+        "500":
+          description: Something went wrong
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Get study items
+      tags:
+      - study
+  /api/study/{id}:
+    delete:
+      parameters:
+      - description: Item Id
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "400":
+          description: Invalid request
+          schema:
+            type: string
+        "500":
+          description: Something went wrong
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Delete study item
+      tags:
+      - study
+    get:
+      parameters:
+      - description: Item Id
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.StudyItem'
+        "400":
+          description: Invalid request
+          schema:
+            type: string
+        "404":
+          description: Item not found
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Get study item
+      tags:
+      - study
+    post:
+      parameters:
+      - description: Item Id
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Study item
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/model.StudyItem'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.StudyItem'
+        "400":
+          description: Invalid request
+          schema:
+            type: string
+        "500":
+          description: Something went wrong
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Update study item
+      tags:
+      - study
+  /api/workout:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Workout item
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/model.WorkoutItem'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.WorkoutItem'
+        "400":
+          description: Invalid request
+          schema:
+            type: string
+      summary: Create workout item
+      tags:
+      - workout
+  /api/workout/:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.WorkoutItem'
+            type: array
+        "500":
+          description: Something went wrong
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Get workout items
+      tags:
+      - workout
+  /api/workout/{id}:
+    delete:
+      parameters:
+      - description: Item Id
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.WorkoutItem'
+        "400":
+          description: Invalid request
+          schema:
+            type: string
+        "500":
+          description: Something went wrong
+          schema:
+            type: string
+      summary: Delete workout item
+      tags:
+      - workout
+    get:
+      parameters:
+      - description: Item Id
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.WorkoutItem'
+        "400":
+          description: Invalid request
+          schema:
+            type: string
+        "404":
+          description: Item not found
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Get workout item
+      tags:
+      - workout
+    post:
+      parameters:
+      - description: Item Id
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Workout item
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/model.WorkoutItem'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.WorkoutItem'
+        "400":
+          description: Invalid request
+          schema:
+            type: string
+        "500":
+          description: Something went wrong
+          schema:
+            type: string
+      summary: Update study item
+      tags:
+      - workout
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: Urername must be "student", Password must not be empty
+      parameters:
+      - description: Login
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/model.Login'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Login successful
+          schema:
+            type: string
+        "400":
+          description: Bad request
+          schema:
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            type: object
+      summary: Login endpoint for education purpose
+      tags:
+      - auth
 securityDefinitions:
   BearerAuth:
     in: header
